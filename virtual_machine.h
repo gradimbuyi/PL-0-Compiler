@@ -1,8 +1,8 @@
 #ifndef VIRTUAL_MACHINE_H
 #define VIRTUAL_MACHINE_H
 
-#define STACK_SIZE 512
-#define PROGRAM_SIZE 512
+#define MAX_STACK_SIZE 512
+#define MAX_PROGRAM_SIZE 512
 
 typedef struct 
 {
