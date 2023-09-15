@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include "virtual_machine.h"
 
+/* Starts and stops the program */
+int halt = -1;
+
 /* Process Address Space */
 int stack[MAX_STACK_SIZE] = {0};
 int instructions[MAX_PROGRAM_SIZE];
 int instruction_size = 0;
-int halt = -1;
 
 /* REGISTERS */
 int base_pointer = 1;
@@ -201,13 +203,24 @@ void readELF(char *fileName)
 
 void virtualMachine()
 {
+    int opCode = instruction_register.opCode;
+    int lex_level = instruction_register.lex_level;
+    int m_address = instruction_register.m_address;
+
     fprintf(stderr, "\t\t   PC  BP  SP  stack\n");
     fprintf(stderr, "Initial values:    %2d  %2d  %2d\n", program_counter, base_pointer, stack_pointer);
 
     while(halt != 0)
     {
         fetch();
+
+        fprintf(stderr, "    %s  %2d  %2d", opCodeName(opCode), lex_level, m_address);
+        fprintf(stderr, "    %2d  %2d  %2d\n", program_counter, base_pointer, stack_pointer);
+
         execute();
+
+        fprintf(stderr, "    %s  %2d  %2d", opCodeName(opCode), lex_level, m_address);
+        fprintf(stderr, "    %2d  %2d  %2d\n", program_counter, base_pointer, stack_pointer);
     }
 }
 
