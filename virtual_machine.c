@@ -7,14 +7,16 @@ int halt = -1;
 
 /* Process Address Space */
 int stack[MAX_STACK_SIZE] = {0};
+int activation_record[3] = {0};
+int activation_record_num = 0;
 int instructions[MAX_PROGRAM_SIZE];
-int instruction_size = 0;
 
 /* REGISTERS */
 int base_pointer = 1;
-int stack_pointer = 69;
+int stack_pointer = 0;
 int program_counter = 0;
 instruction instruction_register;
+int instruction_size = 0;
 
 char *opCodeName(int opCode)
 {
@@ -69,58 +71,59 @@ void execute()
         case 2:  // Operation to be performed on the data at the top of the stack. (or return from function)
             switch (m_address)
             {
-                case 0:
+                case 0: // RTN operation
+                    activation_record_num--;
                     stack_pointer = base_pointer - 1;
                     base_pointer = stack[stack_pointer + 2];
                     program_counter = stack[stack_pointer + 3];
                     break;
 
-                case 1:
+                case 1: // ADD operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] + stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 2:
+                case 2: // SUB operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] - stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 3:
+                case 3: // MUL operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] * stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 4:
+                case 4: // DIV operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] / stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 5:
+                case 5: // EQL operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] == stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 6:
+                case 6: // NEQ operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] != stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 7:
+                case 7: // LSS operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] < stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 8:
+                case 8: // LEQ operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] <= stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 9:
+                case 9: // GTR operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] > stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
-                case 10:
+                case 10: // GEQ operation
                     stack[stack_pointer - 1] = stack[stack_pointer - 1] >= stack[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
@@ -145,6 +148,8 @@ void execute()
             stack[stack_pointer + 3] = program_counter;
             base_pointer = stack_pointer + 1;
             program_counter = m_address;
+            activation_record[activation_record_num] = stack_pointer;
+            activation_record_num++;
             break;
 
         case 6: // Allocates M memory words (increment SP by M)
@@ -188,12 +193,10 @@ void execute()
 
 void readELF(char *fileName)
 {
-    int location = 0;
     FILE *input_file = fopen(fileName, "r");
 
     do {
-        fscanf(input_file, "%d %d %d", &instructions[location], &instructions[location + 1], &instructions[location + 2]);
-        location = location + 3;
+        fscanf(input_file, "%d %d %d", &instructions[instruction_size], &instructions[instruction_size + 1], &instructions[instruction_size + 2]);
         instruction_size = instruction_size + 3;
 
     } while(feof(input_file) == 0);
@@ -203,6 +206,8 @@ void readELF(char *fileName)
 
 void virtualMachine()
 {
+    int working_stack = 0;
+
     int opCode = instruction_register.opCode;
     int lex_level = instruction_register.lex_level;
     int m_address = instruction_register.m_address;
@@ -212,24 +217,37 @@ void virtualMachine()
 
     while(halt != 0)
     {
-        fetch();
+        fetch(); execute();
 
-        fprintf(stderr, "    %s  %2d  %2d", opCodeName(opCode), lex_level, m_address);
-        fprintf(stderr, "    %2d  %2d  %2d\n", program_counter, base_pointer, stack_pointer);
+        fprintf(stderr, "    %3s  %2d  %2d", opCodeName(opCode), lex_level, m_address);
+        fprintf(stderr, "    %2d  %2d  %2d", program_counter, base_pointer, stack_pointer);
 
-        execute();
+        for(int i = 1; i <= stack_pointer; i++)
+        {
+            if(activation_record[working_stack] > 0 && i > activation_record[working_stack])
+            {
+                fprintf(stderr, "| "); working_stack++;
+            }
 
-        fprintf(stderr, "    %s  %2d  %2d", opCodeName(opCode), lex_level, m_address);
-        fprintf(stderr, "    %2d  %2d  %2d\n", program_counter, base_pointer, stack_pointer);
+            fprintf(stderr, "%2d ", stack[i]);
+        }
+
+        fprintf(stderr, "\n");
     }
 }
 
 
 int main(int argc, char *argv[])
 {
-    if(argc == 2) 
+    if(argc < 2)
     {
-        readELF(argv[1]); 
+        printf("Filename missing!\n");
+        exit(1);
+    } 
+    
+    else 
+    {
+        readELF(argv[1]);
         virtualMachine();
     }
 
