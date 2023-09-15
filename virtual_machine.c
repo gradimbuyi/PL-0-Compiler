@@ -6,17 +6,17 @@
 int halt = -1;
 
 /* Process Address Space */
-int stack[MAX_STACK_SIZE] = {0};
-int activation_record[3] = {0};
-int activation_record_num = 0;
-int instructions[MAX_PROGRAM_SIZE];
+int stack[ARRAY_SISE];
+int instructions[ARRAY_SISE];
 
 /* REGISTERS */
-int base_pointer = 1;
-int stack_pointer = 0;
-int program_counter = 0;
+int base_pointer;
+int stack_pointer;
+int program_counter;
+
+/* Instruction Register */
+int instruction_size;
 instruction instruction_register;
-int instruction_size = 0;
 
 char *opCodeName(int opCode)
 {
@@ -72,7 +72,6 @@ void execute()
             switch (m_address)
             {
                 case 0: // RTN operation
-                    activation_record_num--;
                     stack_pointer = base_pointer - 1;
                     base_pointer = stack[stack_pointer + 2];
                     program_counter = stack[stack_pointer + 3];
@@ -148,8 +147,6 @@ void execute()
             stack[stack_pointer + 3] = program_counter;
             base_pointer = stack_pointer + 1;
             program_counter = m_address;
-            activation_record[activation_record_num] = stack_pointer;
-            activation_record_num++;
             break;
 
         case 6: // Allocates M memory words (increment SP by M)
@@ -169,13 +166,14 @@ void execute()
             switch (m_address)
             {
                 case 1: // Write the top stack element to the screen
-                    printf("%d", stack[stack_pointer]);
+                    fprintf(stderr, "Output result is: %2d\n", stack[stack_pointer]);
                     stack_pointer = stack_pointer - 1;
                     break;
             
                 case 2: // Read in input from the user and store it on top of the stack
                     stack_pointer = stack_pointer + 1;
-                    printf("%d", stack[stack_pointer]);
+                    fprintf(stderr, "Please Enter an Intger: ");
+                    scanf("%d", &stack[stack_pointer]);
                     break;
 
                 case 3: // End of program (Set halt flag to zero)
@@ -195,6 +193,8 @@ void readELF(char *fileName)
 {
     FILE *input_file = fopen(fileName, "r");
 
+    instruction_size = 0;
+
     do {
         fscanf(input_file, "%d %d %d", &instructions[instruction_size], &instructions[instruction_size + 1], &instructions[instruction_size + 2]);
         instruction_size = instruction_size + 3;
@@ -208,34 +208,28 @@ void virtualMachine()
 {
     int working_stack = 0;
 
-    int opCode = instruction_register.opCode;
-    int lex_level = instruction_register.lex_level;
-    int m_address = instruction_register.m_address;
+    base_pointer = instruction_size;
+    stack_pointer = base_pointer - 1;
+    program_counter = 0;
 
-    fprintf(stderr, "\t\t   PC  BP  SP  stack\n");
-    fprintf(stderr, "Initial values:    %2d  %2d  %2d\n", program_counter, base_pointer, stack_pointer);
+    fprintf(stderr, "\t\t  PC   BP   SP   stack\n");
+    fprintf(stderr, "Initial values:   %2d   %2d   %2d\n", program_counter, base_pointer, stack_pointer);
 
     while(halt != 0)
     {
-        fetch(); execute();
+        /* During the fetch cycle, data stored in memory is retrieved and saved in instruction register */
+        fetch();
 
-        fprintf(stderr, "    %3s  %2d  %2d", opCodeName(opCode), lex_level, m_address);
-        fprintf(stderr, "    %2d  %2d  %2d", program_counter, base_pointer, stack_pointer);
+        /* During the execution cycle, data in the instruction register are executed */
+        execute();
 
-        for(int i = 1; i <= stack_pointer; i++)
-        {
-            if(activation_record[working_stack] > 0 && i > activation_record[working_stack])
-            {
-                fprintf(stderr, "| "); working_stack++;
-            }
-
-            fprintf(stderr, "%2d ", stack[i]);
-        }
+        /* Outputs the result of the execution in the console */
+        fprintf(stderr, "    %3s  %2d  %2d", opCodeName(instruction_register.opCode), instruction_register.lex_level, instruction_register.m_address);
+        fprintf(stderr, "   %2d   %2d   %2d", program_counter, base_pointer, stack_pointer);
 
         fprintf(stderr, "\n");
     }
 }
-
 
 int main(int argc, char *argv[])
 {

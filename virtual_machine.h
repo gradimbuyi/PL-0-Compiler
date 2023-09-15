@@ -3,6 +3,7 @@
 
 #define MAX_STACK_SIZE 2000
 #define MAX_PROGRAM_SIZE 2000
+#define ARRAY_SISE 512
 
 typedef struct 
 {
