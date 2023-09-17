@@ -6,8 +6,7 @@
 int halt = -1;
 
 /* Process Address Space */
-int stack[ARRAY_SIZE];
-int instructions[ARRAY_SIZE];
+int process_address_space[MAX_PROGRAM_SIZE];
 
 /* REGISTERS */
 int base_pointer;
@@ -20,11 +19,11 @@ instruction instruction_register;
 
 /* Activation Records */
 int record_size = 0;
-activation_record records[ACTIVATION_RECORD_SIZE];
+activation_record records[MAX_ACTIVATION_RECORD_SIZE];
 
 char *opCodeName(int operation)
 {
-    if(operation == 1) return "LIT";
+         if(operation == 1) return "LIT";
     else if(operation == 2) return operationName(instruction_register.m_address);
     else if(operation == 3) return "LOD";
     else if(operation == 4) return "STO";
@@ -38,7 +37,7 @@ char *opCodeName(int operation)
 
 char *operationName(int operation)
 {
-    if(operation == 0) return "RTN";
+         if(operation == 0) return "RTN";
     else if(operation == 1) return "ADD";
     else if(operation == 2) return "SUB";
     else if(operation == 3) return "MUL";
@@ -58,7 +57,7 @@ int findBaseLevel(int bp, int level)
     int activation_record_base = bp;
     while(level > 0)
     {
-        activation_record_base = stack[activation_record_base];
+        activation_record_base = process_address_space[activation_record_base];
         level--;
     }
 
@@ -67,82 +66,88 @@ int findBaseLevel(int bp, int level)
 
 void fetch() 
 {
-    instruction_register.opCode = instructions[program_counter];
-    instruction_register.lex_level = instructions[program_counter + 1];
-    instruction_register.m_address = instructions[program_counter + 2];
+    instruction_register.opCode = process_address_space[program_counter];
+    instruction_register.lex_level = process_address_space[program_counter + 1];
+    instruction_register.m_address = process_address_space[program_counter + 2];
     program_counter = program_counter + 3;
 }
 
 void execute()
 {
-    int opCode = instruction_register.opCode;
-    int lex_level = instruction_register.lex_level;
-    int m_address = instruction_register.m_address;
-
-    switch (opCode)
+    switch (instruction_register.opCode)
     {
         case 1: // Pushes a constant value (literal) M onto the stack
             stack_pointer = stack_pointer + 1;
-            stack[stack_pointer] = m_address;
+            process_address_space[stack_pointer] = instruction_register.m_address;
             break;
 
         case 2: // Operation to be performed on the data at the top of the stack. (or return from function)
-            switch (m_address)
+            switch (instruction_register.m_address)
             {
                 case 0: // RTN operation
                     stack_pointer = base_pointer - 1;
-                    base_pointer = stack[stack_pointer + 2];
-                    program_counter = stack[stack_pointer + 3];
+                    base_pointer = process_address_space[stack_pointer + 2];
+                    program_counter = process_address_space[stack_pointer + 3];
                     record_size = record_size - 1;
                     break;
 
                 case 1: // ADD operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] + stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] + process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 2: // SUB operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] - stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] - process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 3: // MUL operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] * stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] * process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 4: // DIV operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] / stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] / process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 5: // EQL operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] == stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] == process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 6: // NEQ operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] != stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] != process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 7: // LSS operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] < stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] < process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 8: // LEQ operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] <= stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] <= process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 9: // GTR operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] > stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] > process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
                 case 10: // GEQ operation
-                    stack[stack_pointer - 1] = stack[stack_pointer - 1] >= stack[stack_pointer];
+                    process_address_space[stack_pointer - 1] = 
+                    process_address_space[stack_pointer - 1] >= process_address_space[stack_pointer];
                     stack_pointer = stack_pointer - 1;
                     break;
 
@@ -154,48 +159,50 @@ void execute()
 
         case 3: // Load value to top of stack from the stack location at offset M in AR located L lexicographical levels down
             stack_pointer = stack_pointer + 1;
-            stack[stack_pointer] = stack[findBaseLevel(base_pointer, lex_level) + m_address];
+            process_address_space[stack_pointer] = 
+            process_address_space[findBaseLevel(base_pointer, instruction_register.lex_level) + instruction_register.m_address];
             break;
 
         case 4: // Store value at top of stack in stack location at offset M in AR located L lexicographical levels down
-            stack[findBaseLevel(base_pointer, lex_level) + m_address] = stack[stack_pointer];
+            process_address_space[findBaseLevel(base_pointer, instruction_register.lex_level) + instruction_register.m_address] = 
+            process_address_space[stack_pointer];
             stack_pointer = stack_pointer - 1;
             break;
 
         case 5: // Call procedure at code index M (generates new Activation Record and PC <- M)
-            stack[stack_pointer + 1] = findBaseLevel(base_pointer, lex_level);
-            stack[stack_pointer + 2] = base_pointer;
-            stack[stack_pointer + 3] = program_counter;
+            process_address_space[stack_pointer + 1] = findBaseLevel(base_pointer, instruction_register.lex_level);
+            process_address_space[stack_pointer + 2] = base_pointer;
+            process_address_space[stack_pointer + 3] = program_counter;
             base_pointer = stack_pointer + 1;
-            program_counter = m_address;
+            program_counter = instruction_register.m_address;
             record_size = record_size + 1;
             break;
 
         case 6: // Allocates M memory words (increment SP by M)
-            stack_pointer = stack_pointer + m_address;
+            stack_pointer = stack_pointer + instruction_register.m_address;
             break;
 
         case 7: // Jump to instruction M (PC <- M)
-            program_counter = m_address;
+            program_counter = instruction_register.m_address;
             break;
 
         case 8: // Jump to instruction M if topstack element is 0
-            if(stack[stack_pointer] == 0) program_counter = m_address;
+            if(process_address_space[stack_pointer] == 0) program_counter = instruction_register.m_address;
             stack_pointer = stack_pointer - 1;
             break;
 
         case 9: // System operations
-            switch (m_address)
+            switch (instruction_register.m_address)
             {
                 case 1: // Write the top stack element to the screen
-                    fprintf(stderr, "Output result is: %2d\n", stack[stack_pointer]);
+                    fprintf(stderr, "Output result is: %2d\n", process_address_space[stack_pointer]);
                     stack_pointer = stack_pointer - 1;
                     break;
             
                 case 2: // Read in input from the user and store it on top of the stack
                     stack_pointer = stack_pointer + 1;
                     fprintf(stderr, "Please Enter an Intger: ");
-                    scanf("%d", &stack[stack_pointer]);
+                    scanf("%d", &process_address_space[stack_pointer]);
                     break;
 
                 case 3: // End of program (Set halt flag to zero)
@@ -221,7 +228,9 @@ void readELF(char *fileName)
     instruction_size = 0;
 
     do {
-        fscanf(input_file, "%d %d %d", &instructions[instruction_size], &instructions[instruction_size + 1], &instructions[instruction_size + 2]);
+        fscanf(input_file, "%d %d %d", &process_address_space[instruction_size], 
+        &process_address_space[instruction_size + 1], &process_address_space[instruction_size + 2]);
+
         instruction_size = instruction_size + 3;
 
     } while(feof(input_file) == 0);
@@ -231,8 +240,6 @@ void readELF(char *fileName)
 
 void virtualMachine()
 {
-    int working_stack = 0;
-
     base_pointer = instruction_size;
     stack_pointer = base_pointer - 1;
     program_counter = 0;
@@ -257,7 +264,7 @@ void virtualMachine()
         {
             for(int j = records[i].base_pointer; j <= records[i].stack_pointer; j++)
             {
-                fprintf(stderr, "%d ", stack[j]);
+                fprintf(stderr, "%d ", process_address_space[j]);
             }
 
             if(i != record_size) fprintf(stderr, "| ");

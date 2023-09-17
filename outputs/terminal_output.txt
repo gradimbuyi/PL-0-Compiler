@@ -1,76 +1,32 @@
-# PL/0 Compiler
-This is an implmentation for a small PL/0 Compiler writing in C.
-## Virtual Machine (virtual_machine.c)
-The virtual machine or P-Machine is a stack machine that has one memory area called the process address space. The PAS is dived into sections: the text which contains the list of instructions to be performed by the machine, and the stack which organizes the data to be used by the CPU. 
-### Instruction Set Architecture (ISA)
-There are 10 arithmetic/logical operations that manipulate the data within the stack segment.
-```
-01 LIT 0, M Pushes a constant value (literal) M onto the stack
-02 OPR 0, M Operation to be performed on the data at the top of the stack (or return from function)
-03 LOD L, M Load value to top of stack from the stack location at offset M in AR located L lexicographical levels down
-04 STO L, M Store value at top of stack in the stack location at offset M in AR located L lexicographical levels down
-05 CAL L, M Call procedure at code index M (generates new Activation Record and PC <- M)
-06 INC 0, M Allocates M memory words (increment SP by M)
-07 JMP 0, M Jump to instruction M (PC <- M)
-08 JCP 0, M Jump to instruction M if top stack element is 0
-09 SYS 0, 1 Write the top stack element to the screen
-   SYS 0, 2 Read in input from the user and store it on top of the stack
-   SYS 0, 3 End of program (Set Halt flag to zero)
-```
-### Vocabulary
-```
-AR - Activation Record
-OPR - Operation Code
-PAS - Process Address Space
-L - Lexicographical level
-M - Depending on the operators indicates:
-    a. a number (when OP is LIT or INC)
-    b. a program address (when OP is JMP, JCP, or CAL)
-    c. a data address (when OP is LOD, STO)
-    d. the identify of the arithmetic operation associated to the OPR op-code.
-PC - Program Counter
-IR - Instruction Register
-BP - Base Pointer
-SP - Stack Pointer
-```
+Last login: Sun Sep 17 17:00:55 on ttys000
 
-### Example Input
-```
-7 0 75
-7 0 6
-6 0 4
-3 1 4
-4 0 3
-3 1 4
-1 0 1
-2 0 2
-4 1 4
-3 1 4
-1 0 0
-2 0 5
-8 0 45
-1 0 1
-4 1 3
-3 1 4
-1 0 0
-2 0 9
-8 0 60
-5 1 6
-3 1 3
-3 0 3
-2 0 3
-4 1 3
-2 0 0
-6 0 5
-1 0 3
-4 0 4
-5 0 6
-3 0 3
-9 0 1
-9 0 3
-```
-### Corresponding Output
-```
+bash-3.2$ gcc -o ./outputs/virtual_machine virtual_machine.c
+bash-3.2$ cd inputs
+bash-3.2$ ../outputs/virtual_machine input_001.txt
+		  PC   BP   SP   stack
+Initial values:    0   69   68
+
+    JMP   0  60   60   69   68   
+    INC   0   3   63   69   71   0 0 0 
+    CAL   0  45   45   72   71   0 0 0 | 
+    INC   0   4   48   72   75   0 0 0 | 69 69 66 0 
+    LIT   0   2   51   72   76   0 0 0 | 69 69 66 0 2 
+    STO   0   3   54   72   75   0 0 0 | 69 69 66 2 
+    CAL   0  24   24   76   75   0 0 0 | 69 69 66 2 | 
+    INC   0   4   27   76   79   0 0 0 | 69 69 66 2 | 72 72 57 0 
+    LIT   0   1   30   76   80   0 0 0 | 69 69 66 2 | 72 72 57 0 1 
+    STO   0   3   33   76   79   0 0 0 | 69 69 66 2 | 72 72 57 1 
+    LIT   0   3   36   76   80   0 0 0 | 69 69 66 2 | 72 72 57 1 3 
+    STO   1   3   39   76   79   0 0 0 | 69 69 66 3 | 72 72 57 1 
+    CAL   0  12   12   80   79   0 0 0 | 69 69 66 3 | 72 72 57 1 | 
+    INC   0   3   15   80   82   0 0 0 | 69 69 66 3 | 72 72 57 1 | 76 76 42 
+    LOD   2   3   18   80   83   0 0 0 | 69 69 66 3 | 72 72 57 1 | 76 76 42 3 
+    STO   1   3   21   80   82   0 0 0 | 69 69 66 3 | 72 72 57 3 | 76 76 42 
+    RTN   0   0   42   76   79   0 0 0 | 69 69 66 3 | 72 72 57 3 
+    RTN   0   0   57   72   75   0 0 0 | 69 69 66 3 
+    RTN   0   0   66   69   71   0 0 0 
+    SYS   0   3   69   69   71   0 0 0 
+bash-3.2$ ../outputs/virtual_machine input_002.txt
 		  PC   BP   SP   stack
 Initial values:    0   96   95
 
@@ -146,5 +102,28 @@ Initial values:    0   96   95
     LOD   0   3   90   96   101   0 0 0 6 0 6 
 Output result is:  6
     SYS   0   1   93   96   100   0 0 0 6 0 
-    SYS   0   3   96   96   100   0 0 0 6 0
-```
+    SYS   0   3   96   96   100   0 0 0 6 0 
+bash-3.2$ ../outputs/virtual_machine input_003.txt
+		  PC   BP   SP   stack
+Initial values:    0   60   59
+
+    JMP   0  45   45   60   59   
+    INC   0   5   48   60   64   0 0 0 0 0 
+Please Enter an Intger: 3
+    SYS   0   2   51   60   65   0 0 0 0 0 3 
+    CAL   0   6    6   66   65   0 0 0 0 0 3 | 
+    INC   0   4    9   66   69   0 0 0 0 0 3 | 60 60 54 0 
+    LIT   0   4   12   66   70   0 0 0 0 0 3 | 60 60 54 0 4 
+    LIT   0   3   15   66   71   0 0 0 0 0 3 | 60 60 54 0 4 3 
+    MUL   0   3   18   66   70   0 0 0 0 0 3 | 60 60 54 0 12 
+    STO   1   4   21   66   69   0 0 0 0 12 3 | 60 60 54 0 
+    LIT   0  14   24   66   70   0 0 0 0 12 3 | 60 60 54 0 14 
+    LOD   1   4   27   66   71   0 0 0 0 12 3 | 60 60 54 0 14 12 
+    LSS   0   7   30   66   70   0 0 0 0 12 3 | 60 60 54 0 0 
+    JCP   0  39   39   66   69   0 0 0 0 12 3 | 60 60 54 0 
+    LIT   0   5   42   66   70   0 0 0 0 12 3 | 60 60 54 0 5 
+    RTN   0   0   54   60   65   0 0 0 0 12 3 
+Output result is:  3
+    SYS   0   1   57   60   64   0 0 0 0 12 
+    SYS   0   3   60   60   64   0 0 0 0 12 
+bash-3.2$ 
