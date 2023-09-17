@@ -6,8 +6,8 @@
 int halt = -1;
 
 /* Process Address Space */
-int stack[ARRAY_SISE];
-int instructions[ARRAY_SISE];
+int stack[ARRAY_SIZE];
+int instructions[ARRAY_SIZE];
 
 /* REGISTERS */
 int base_pointer;
@@ -18,22 +18,42 @@ int program_counter;
 int instruction_size;
 instruction instruction_register;
 
-char *opCodeName(int opCode)
+/* Activation Records */
+int record_size = 0;
+activation_record records[ACTIVATION_RECORD_SIZE];
+
+char *opCodeName(int operation)
 {
-    if(opCode == 1) return "LIT";
-    else if(opCode == 2) return "OPR";
-    else if(opCode == 3) return "LOD";
-    else if(opCode == 4) return "STO";
-    else if(opCode == 5) return "CAL";
-    else if(opCode == 6) return "INC";
-    else if(opCode == 7) return "JMP";
-    else if(opCode == 8) return "JCP";
-    else if(opCode == 9) return "SYS"; 
+    if(operation == 1) return "LIT";
+    else if(operation == 2) return operationName(instruction_register.m_address);
+    else if(operation == 3) return "LOD";
+    else if(operation == 4) return "STO";
+    else if(operation == 5) return "CAL";
+    else if(operation == 6) return "INC";
+    else if(operation == 7) return "JMP";
+    else if(operation == 8) return "JCP";
+    else if(operation == 9) return "SYS"; 
+    else return NULL;
+}
+
+char *operationName(int operation)
+{
+    if(operation == 0) return "RTN";
+    else if(operation == 1) return "ADD";
+    else if(operation == 2) return "SUB";
+    else if(operation == 3) return "MUL";
+    else if(operation == 4) return "DIV";
+    else if(operation == 5) return "EQL";
+    else if(operation == 6) return "NEQ";
+    else if(operation == 7) return "LSS";
+    else if(operation == 8) return "LEQ";
+    else if(operation == 9) return "GTR";
+    else if(operation == 10) return "GEQ";
     else return NULL;
 }
 
 /* Find base level */
-int find_base_level(int bp, int level)
+int findBaseLevel(int bp, int level)
 {
     int activation_record_base = bp;
     while(level > 0)
@@ -45,7 +65,6 @@ int find_base_level(int bp, int level)
     return activation_record_base;
 }
 
-/* Fetch cycle */
 void fetch() 
 {
     instruction_register.opCode = instructions[program_counter];
@@ -54,7 +73,6 @@ void fetch()
     program_counter = program_counter + 3;
 }
 
-/* Execute cycle */
 void execute()
 {
     int opCode = instruction_register.opCode;
@@ -68,13 +86,14 @@ void execute()
             stack[stack_pointer] = m_address;
             break;
 
-        case 2:  // Operation to be performed on the data at the top of the stack. (or return from function)
+        case 2: // Operation to be performed on the data at the top of the stack. (or return from function)
             switch (m_address)
             {
                 case 0: // RTN operation
                     stack_pointer = base_pointer - 1;
                     base_pointer = stack[stack_pointer + 2];
                     program_counter = stack[stack_pointer + 3];
+                    record_size = record_size - 1;
                     break;
 
                 case 1: // ADD operation
@@ -131,22 +150,25 @@ void execute()
                     break;
             }
 
+            break;
+
         case 3: // Load value to top of stack from the stack location at offset M in AR located L lexicographical levels down
             stack_pointer = stack_pointer + 1;
-            stack[stack_pointer] = stack[find_base_level(base_pointer, lex_level) + m_address];
+            stack[stack_pointer] = stack[findBaseLevel(base_pointer, lex_level) + m_address];
             break;
 
         case 4: // Store value at top of stack in stack location at offset M in AR located L lexicographical levels down
-            stack[find_base_level(base_pointer, lex_level) + m_address] = stack[stack_pointer];
+            stack[findBaseLevel(base_pointer, lex_level) + m_address] = stack[stack_pointer];
             stack_pointer = stack_pointer - 1;
             break;
 
         case 5: // Call procedure at code index M (generates new Activation Record and PC <- M)
-            stack[stack_pointer + 1] = find_base_level(base_pointer, lex_level);
+            stack[stack_pointer + 1] = findBaseLevel(base_pointer, lex_level);
             stack[stack_pointer + 2] = base_pointer;
             stack[stack_pointer + 3] = program_counter;
             base_pointer = stack_pointer + 1;
             program_counter = m_address;
+            record_size = record_size + 1;
             break;
 
         case 6: // Allocates M memory words (increment SP by M)
@@ -187,6 +209,9 @@ void execute()
         default:
             break;
     }
+
+    records[record_size].base_pointer = base_pointer;
+    records[record_size].stack_pointer = stack_pointer;
 }
 
 void readELF(char *fileName)
@@ -213,7 +238,7 @@ void virtualMachine()
     program_counter = 0;
 
     fprintf(stderr, "\t\t  PC   BP   SP   stack\n");
-    fprintf(stderr, "Initial values:   %2d   %2d   %2d\n", program_counter, base_pointer, stack_pointer);
+    fprintf(stderr, "Initial values:   %2d   %2d   %2d\n\n", program_counter, base_pointer, stack_pointer);
 
     while(halt != 0)
     {
@@ -225,8 +250,19 @@ void virtualMachine()
 
         /* Outputs the result of the execution in the console */
         fprintf(stderr, "    %3s  %2d  %2d", opCodeName(instruction_register.opCode), instruction_register.lex_level, instruction_register.m_address);
-        fprintf(stderr, "   %2d   %2d   %2d", program_counter, base_pointer, stack_pointer);
+        fprintf(stderr, "   %2d   %2d   %2d   ", program_counter, base_pointer, stack_pointer);
+        
+        //fprintf(stderr, "Num Records: %d ", num_records);
+        for(int i = 0; i <= record_size; i++)
+        {
+            for(int j = records[i].base_pointer; j <= records[i].stack_pointer; j++)
+            {
+                fprintf(stderr, "%d ", stack[j]);
+            }
 
+            if(i != record_size) fprintf(stderr, "| ");
+        }
+        
         fprintf(stderr, "\n");
     }
 }
