@@ -244,8 +244,8 @@ void virtualMachine()
     stack_pointer = base_pointer - 1;
     program_counter = 0;
 
-    fprintf(stderr, "\t\t  PC   BP   SP   stack\n");
-    fprintf(stderr, "Initial values:   %2d   %2d   %2d\n\n", program_counter, base_pointer, stack_pointer);
+    fprintf(stderr, "\t\t PC  BP  SP  stack\n");
+    fprintf(stderr, "Initial values: %3d %3d %3d\n\n", program_counter, base_pointer, stack_pointer);
 
     while(halt != 0)
     {
@@ -256,8 +256,8 @@ void virtualMachine()
         execute();
 
         /* Outputs the result of the execution in the console */
-        fprintf(stderr, "    %3s  %2d  %2d", opCodeName(instruction_register.opCode), instruction_register.lex_level, instruction_register.m_address);
-        fprintf(stderr, "   %2d   %2d   %2d   ", program_counter, base_pointer, stack_pointer);
+        fprintf(stderr, "   %3s %3d %3d", opCodeName(instruction_register.opCode), instruction_register.lex_level, instruction_register.m_address);
+        fprintf(stderr, "  %3d %3d %3d  ", program_counter, base_pointer, stack_pointer);
         
         //fprintf(stderr, "Num Records: %d ", num_records);
         for(int i = 0; i <= record_size; i++)
