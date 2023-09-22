@@ -33,4 +33,4 @@ IR - Instruction Register
 BP - Base Pointer
 SP - Stack Pointer
 ```
-### Scanner (scanner.c)
+## Scanner (scanner.c)
