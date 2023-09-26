@@ -34,3 +34,4 @@ BP - Base Pointer
 SP - Stack Pointer
 ```
 ## Scanner (scanner.c)
+The lexical analyzer or scanner reas in a source program written in PL/0, identify some errors, and produce as output, the source program, the source program lexeme table, and the token list.
