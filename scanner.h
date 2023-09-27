@@ -15,5 +15,6 @@ typedef enum
 } token_type;
 
 void readSourceProgram(char *file_name);
+void printLexemeTable();
 
 #endif
