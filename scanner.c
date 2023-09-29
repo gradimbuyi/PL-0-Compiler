@@ -53,7 +53,7 @@ int checkTokenType(char *token, int isAllNumber)
         token_type = numbersym;
 
         if(number > imax) fprintf(stderr, "%s\t\tError: Too many digits\n", token);
-        else fprintf(stderr, "%s\t\t%d\n", token, token_type);
+        else fprintf(stderr, "%s\t\t\t%d\n", token, token_type);
 
     } else {
 
@@ -99,14 +99,18 @@ int checkTokenType(char *token, int isAllNumber)
                 break;
             }
 
+            if(isdigit(token[0])) token_type = -2;
+
             IDENTIFIER_NAMES[NUM_IDENTIFIER] = malloc(sizeof(char) * strlen(token) + 1);
             strcpy(IDENTIFIER_NAMES[NUM_IDENTIFIER], token);
             NUM_IDENTIFIER++;
         }
 
-        if(token_type == -1) fprintf(stderr, "%s\t\tError: Not a valid symbol\n", token);
-        else if(strlen(token) > strmax) fprintf(stderr, "%s\t\tError: Ident length too long\n", token);
-        else fprintf(stderr, "%s\t\t%d\n", token, token_type);
+        if(token_type == -1) fprintf(stderr, "%s\t\t\tError: Not a valid symbol\n", token);
+        else if(token_type == -2) fprintf(stderr, "%s\t\t\tError: Not a valid Ident\n", token);
+        else if(strlen(token) > cmax) fprintf(stderr, "%s\tError: Ident length too long\n", token);
+        else if(strcmp(token, "procedure") == 0) fprintf(stderr, "%s\t\t%d\n", token, token_type);
+        else fprintf(stderr, "%s\t\t\t%d\n", token, token_type);
     }
     
     return token_type;
@@ -122,7 +126,7 @@ void lexicalAnalyzer(char *file_name)
     printSourceProgram(program_memory, num_inputs);
 
     fprintf(stderr, "\n\nLexeme Table:\n\n");
-    fprintf(stderr, "lexeme\t\ttoken type\n");
+    fprintf(stderr, "lexeme\t\t\ttoken type\n");
 
     for(int i = 0; i < num_inputs; i++)
     {
@@ -139,11 +143,13 @@ void lexicalAnalyzer(char *file_name)
 
             else if(program_memory[i][j] == '/' && j + 1 < strlen(program_memory[i]) && program_memory[i][j + 1] == '*')
             {
+                fprintf(stderr, "This is the current token: %s", token);
+
                 char current = program_memory[i][j];
-                char next = program_memory[i][j + 1];
+                char next = program_memory[i][j + 1]; j++;
 
                 do {
-                    j += 2;
+                    j += 1;
 
                     if(j < strlen(program_memory[i]) && j + 1 < strlen(program_memory[i])) 
                     {
@@ -156,6 +162,8 @@ void lexicalAnalyzer(char *file_name)
                         current = program_memory[i][j];
                         next = program_memory[i + 1][0];
                         i++; j = 0;
+
+                        fprintf(stderr, "stuck two\n");
                     }
 
                 } while(current != '*' && next != '/');
@@ -163,10 +171,9 @@ void lexicalAnalyzer(char *file_name)
 
             else 
             {
-                
-                if(!(isalpha(program_memory[i][j]) || isdigit(program_memory[i][j])) && token_size > 0) 
+                if(token_size > 0 && (isalpha(token[token_size - 1]) || isdigit(token[token_size - 1]))) 
                 {
-                    if(program_memory[i][j] != '=' && program_memory[i][j] != '>') 
+                    if(!(isalpha(program_memory[i][j]) || isdigit(program_memory[i][j])))
                     {
                         TOKEN_LIST[NUM_TOKEN++] = checkTokenType(token, isAllNumber);
                         token_size = 0;
