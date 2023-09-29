@@ -13,8 +13,10 @@ int NUM_IDENTIFIER = 0;
 int TABLE_SIZE = 0;
 int NUM_TOKEN = 0;
 
-int readSourceProgram(char *file_name, char **program_memory, int num_inputs)
+int readSourceProgram(char *file_name, char **program_memory)
 {
+    int num_inputs = 0;
+
     FILE *input_file = fopen(file_name, "r");
     char buffer[strmax];
 
@@ -25,8 +27,7 @@ int readSourceProgram(char *file_name, char **program_memory, int num_inputs)
         num_inputs++;
     }
 
-    fclose(input_file);
-    return num_inputs;
+    fclose(input_file); return num_inputs;
 }
 
 void printSourceProgram(char **program_memory, int num_inputs)
@@ -39,7 +40,7 @@ void printSourceProgram(char **program_memory, int num_inputs)
     }
 }
 
-int checkTokenType(char *token, int isAllNumber, int foundInvalidSym) 
+int checkTokenType(char *token, int isAllNumber) 
 {
     int token_type;
 
@@ -51,8 +52,8 @@ int checkTokenType(char *token, int isAllNumber, int foundInvalidSym)
         TABLE_SIZE++;
         token_type = numbersym;
 
-        if(number > imax) fprintf(stderr, "%s\t\tError: Too many digits", token);
-        else fprintf(stderr, "%s\t\t%d", token, token_type);
+        if(number > imax) fprintf(stderr, "%s\t\tError: Too many digits\n", token);
+        else fprintf(stderr, "%s\t\t%d\n", token, token_type);
 
     } else {
 
@@ -73,7 +74,7 @@ int checkTokenType(char *token, int isAllNumber, int foundInvalidSym)
         else if(strcmp(token, ")") == 0)            token_type = rparentsym;
         else if(strcmp(token, ",") == 0)            token_type = commasym;
         else if(strcmp(token, ";") == 0)            token_type = semicolonsym;
-        else if(strcmp(token, ")") == 0)            token_type = periodsym;
+        else if(strcmp(token, ".") == 0)            token_type = periodsym;
         else if(strcmp(token, ":=") == 0)           token_type = becomessym;
         else if(strcmp(token, "begin") == 0)        token_type = beginsym;
         else if(strcmp(token, "end") == 0)          token_type = endsym;
@@ -92,7 +93,7 @@ int checkTokenType(char *token, int isAllNumber, int foundInvalidSym)
             
             token_type = identsym;
 
-            for(int i = 0; i < strlen(token); i++) if(!isalpha(token[i]) || !isdigit(token[i])) 
+            for(int i = 0; i < strlen(token); i++) if(!isalpha(token[i]) && !isdigit(token[i])) 
             {
                 token_type = -1;
                 break;
@@ -103,9 +104,9 @@ int checkTokenType(char *token, int isAllNumber, int foundInvalidSym)
             NUM_IDENTIFIER++;
         }
 
-        if(token_type == -1) fprintf(stderr, "%s\t\tError: Not a valid symbol", token);
-        else if(strlen(token) > strmax) fprintf(stderr, "%s\t\tError: Ident length too long", token);
-        else fprintf(stderr, "%s\t\t%d", token, token_type);
+        if(token_type == -1) fprintf(stderr, "%s\t\tError: Not a valid symbol\n", token);
+        else if(strlen(token) > strmax) fprintf(stderr, "%s\t\tError: Ident length too long\n", token);
+        else fprintf(stderr, "%s\t\t%d\n", token, token_type);
     }
     
     return token_type;
@@ -113,25 +114,30 @@ int checkTokenType(char *token, int isAllNumber, int foundInvalidSym)
 
 void lexicalAnalyzer(char *file_name)
 {
-    int num_inputs = 0; 
     int isAllNumber = 0;
-    int foundInvalidSym = -1;
 
-    char **program_memory = malloc(sizeof(char *) * 100); 
+    char **program_memory = malloc(sizeof(char *) * 100);
+    int num_inputs = readSourceProgram(file_name, program_memory);
 
-    num_inputs = readSourceProgram(file_name, program_memory, num_inputs);
     printSourceProgram(program_memory, num_inputs);
 
-    fprintf(stderr, "\nLexeme Table:\n\n");
-    fprintf(stderr, "lexeme\ttoken type\n");
-    
-    for(int i = 0; i < num_inputs; i++) {
-        char token[strmax]; 
-        int token_size = 0;
+    fprintf(stderr, "\n\nLexeme Table:\n\n");
+    fprintf(stderr, "lexeme\t\ttoken type\n");
+
+    for(int i = 0; i < num_inputs; i++)
+    {
+        char token[strmax]; int token_size = 0;
 
         for(int j = 0; j < strlen(program_memory[i]); j++)
         {
-            if(program_memory[i][j] == '/' && j + 1 < strlen(program_memory[i]) && program_memory[i][j + 1] == '*')
+            if((program_memory[i][j] == ' ' || program_memory[i][j] == '\t' || program_memory[i][j] == '\n') && token_size != 0)
+            {
+                TOKEN_LIST[NUM_TOKEN++] = checkTokenType(token, isAllNumber);
+                token_size = 0;
+                isAllNumber = 0;
+            }
+
+            else if(program_memory[i][j] == '/' && j + 1 < strlen(program_memory[i]) && program_memory[i][j + 1] == '*')
             {
                 char current = program_memory[i][j];
                 char next = program_memory[i][j + 1];
@@ -155,25 +161,34 @@ void lexicalAnalyzer(char *file_name)
                 } while(current != '*' && next != '/');
             }
 
-            else if(program_memory[i][j] == ' ' || program_memory[i][j] == '\n' && program_memory[i][j] == '\t' && token_size != 0)
+            else 
             {
-                TOKEN_LIST[NUM_TOKEN] = checkTokenType(token, isAllNumber, foundInvalidSym);
-                NUM_TOKEN++;
+                
+                if(!(isalpha(program_memory[i][j]) || isdigit(program_memory[i][j])) && token_size > 0) 
+                {
+                    if(program_memory[i][j] != '=' && program_memory[i][j] != '>') 
+                    {
+                        TOKEN_LIST[NUM_TOKEN++] = checkTokenType(token, isAllNumber);
+                        token_size = 0;
+                        isAllNumber = 0;
+                    }
+                }
 
-                token_size = 0;
-                isAllNumber = 0;
-                foundInvalidSym = -1;
-            }
-
-            else if(program_memory[i][j] != ' ' || program_memory[i][j] != '\n' || program_memory[i][j] != '\t')
-            {
                 if(isAllNumber == 0 && !isdigit(program_memory[i][j])) isAllNumber = -1;
-                token[token_size] = program_memory[i][j];
-                token[token_size + 1] = '\0'; 
+
+                if(!((program_memory[i][j] == ' ' || program_memory[i][j] == '\t' || program_memory[i][j] == '\n')))
+                {
+                    token[token_size] = program_memory[i][j];
+                    token[token_size + 1] = '\0'; 
+                    token_size++;
+                }
             }
         }
-    }
 
+        if(i + 1 == num_inputs && token_size > 0) TOKEN_LIST[NUM_TOKEN++] = checkTokenType(token, isAllNumber);
+        
+    }
+    
     free(program_memory);
 }
 

@@ -6,18 +6,16 @@
 #define cmax 11 /* maximum number of chars for idents */
 #define strmax 256 /* maximum length of strings */
 
-typedef enum 
-{ 
-    nullsym = 0, skipsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5,
-    multsym = 6, slashsym = 7, ifelsym = 8, eqlsym = 9, neqsym = 10, lessym = 11,
-    leqsym = 12, gtrsym = 13, geqsym = 14, lparentsym = 15, rparentsym = 16,
-    commasym = 17, semicolonsym = 18, periodsym = 19, becomessym = 20,
-    beginsym = 21, endsym = 22, ifsym = 23, thensym = 24, whilesym = 25, dosym = 26,
-    callsym = 27, constsym = 28, varsym = 29, procsym = 30, writesym = 31,
-    readsym = 32, elsesym = 33
+typedef enum { 
+    nullsym, skipsym, identsym, numbersym, plussym, minussym, multsym, slashsym, ifelsym, eqlsym, 
+    neqsym, lessym, leqsym, gtrsym, geqsym, lparentsym, rparentsym, commasym, semicolonsym, periodsym, 
+    becomessym, beginsym, endsym, ifsym, thensym, whilesym, dosym, callsym, constsym, varsym, procsym, 
+    writesym, readsym, elsesym
 } token_type;
 
-int readSourceProgram(char *file_name, char **program_memory, int num_inputs);
-void printLexemeTable();
+int readSourceProgram(char *file_name, char **program_memory);
+void printSourceProgram(char **program_memory, int num_inputs);
+int checkTokenType(char *token, int isAllNumber);
+void lexicalAnalyzer(char *file_name);
 
 #endif
